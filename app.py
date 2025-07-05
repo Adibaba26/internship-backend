@@ -23,8 +23,10 @@ def login():
 def dashboard():
     return "<h1 style='text-align:center;'>🎉 Application Submitted Successfully!</h1><p style='text-align:center;'>We will contact you soon.</p>"
 
-
+import os
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    port = int(os.environ.get("PORT", 8080))
+    print(f"Running on port {port}")
+
+    app.run(host="0.0.0.0", port=port)
