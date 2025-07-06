@@ -5,7 +5,7 @@ import requests
 
 app = Flask(__name__)
 
-RECAPTCHA_SECRET_KEY = "6LdxI3orAAAAAIXbeA2vBUB7oXR0dXUkUdUeDjBV"
+RECAPTCHA_SECRET_KEY = "6Ld3QXorAAAAAFO4-OdtMwMXbhjMP1GNQp1uPKCU"
 
 # Initialize SQLite database
 def init_db():
