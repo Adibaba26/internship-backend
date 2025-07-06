@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
 import requests
@@ -7,15 +7,17 @@ app = Flask(__name__)
 
 RECAPTCHA_SECRET_KEY = "6LdxI3orAAAAAIXbeA2vBUB7oXR0dXUkUdUeDjBV"
 
-# Initialize the database
+# Initialize SQLite database
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT NOT NULL,
-                    password TEXT NOT NULL
-                )''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL,
+            password TEXT NOT NULL
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -35,13 +37,13 @@ def login():
         'secret': RECAPTCHA_SECRET_KEY,
         'response': recaptcha_response
     }
-    r = requests.post(verify_url, data=payload)
-    result = r.json()
+    response = requests.post(verify_url, data=payload)
+    result = response.json()
 
     if not result.get("success"):
         return "reCAPTCHA verification failed. Please try again."
 
-    # Save credentials to SQLite
+    # Save credentials
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
@@ -56,5 +58,4 @@ def dashboard():
 
 if __name__ == '__main__':
     init_db()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)
