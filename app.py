@@ -1,24 +1,26 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask_cors import CORS
 import sqlite3
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Get absolute path to the database file
+# Database setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "database.db")
 
-# Initialize the database
 def init_db():
     if not os.path.exists(DB_PATH):
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL,
-            password TEXT NOT NULL
-        )
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL
+            )
         ''')
         conn.commit()
         conn.close()
@@ -29,17 +31,24 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
-    email = request.form['email']
-    password = request.form['password']
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role')
 
-    # Save credentials to SQLite
+    # ✅ Save to SQLite (Phishing Simulation)
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
+    c.execute("INSERT INTO users (email, password, role) VALUES (?, ?, ?)", (email, password, role))
     conn.commit()
     conn.close()
 
-    return redirect(url_for('dashboard'))
+    # ✅ Send success response
+    return jsonify({
+        'success': True,
+        'message': 'Login successful',
+        'user': {'email': email, 'role': role}
+    })
 
 @app.route('/dashboard')
 def dashboard():
@@ -47,5 +56,5 @@ def dashboard():
 
 if __name__ == '__main__':
     init_db()
-    port = int(os.environ.get("PORT", 5080))  # or use 5000 locally
+    port = int(os.environ.get("PORT", 5080))
     app.run(host='0.0.0.0', port=port, debug=True)
