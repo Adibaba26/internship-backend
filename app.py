@@ -1,12 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
-import requests
 
 app = Flask(__name__)
-
-# Your reCAPTCHA secret key
-RECAPTCHA_SECRET_KEY = "6Ld3QXorAAAAAFO4-OdtMwMXbhjMP1GNQp1uPKCU"
 
 # Get absolute path to the database file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,19 +31,6 @@ def index():
 def login():
     email = request.form['email']
     password = request.form['password']
-    recaptcha_response = request.form.get('g-recaptcha-response')
-
-    # Verify reCAPTCHA
-    verify_url = "https://www.google.com/recaptcha/api/siteverify"
-    payload = {
-        'secret': RECAPTCHA_SECRET_KEY,
-        'response': recaptcha_response
-    }
-    r = requests.post(verify_url, data=payload)
-    result = r.json()
-
-    if not result.get("success"):
-        return "reCAPTCHA verification failed. Please try again."
 
     # Save credentials to SQLite
     conn = sqlite3.connect(DB_PATH)
@@ -64,5 +47,5 @@ def dashboard():
 
 if __name__ == '__main__':
     init_db()
-    port = int(os.environ.get("PORT", 5080))  # Use 5000 locally if preferred
+    port = int(os.environ.get("PORT", 5080))  # or use 5000 locally
     app.run(host='0.0.0.0', port=port, debug=True)
