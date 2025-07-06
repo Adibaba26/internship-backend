@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
+import requests
 
 app = Flask(__name__)
+RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY")
 
-# Create the database and users table if it doesn't exist
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
@@ -24,15 +25,22 @@ def index():
 def login():
     email = request.form['email']
     password = request.form['password']
+    recaptcha_response = request.form.get('g-recaptcha-response')
 
-    # Save credentials to SQLite
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
-    conn.commit()
-    conn.close()
+    verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    payload = {'secret': RECAPTCHA_SECRET_KEY, 'response': recaptcha_response}
+    r = requests.post(verify_url, data=payload)
+    result = r.json()
 
-    return redirect(url_for('dashboard'))
+    if result.get('success'):
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('dashboard'))
+    else:
+        return "reCAPTCHA failed. Please go back and try again."
 
 @app.route('/dashboard')
 def dashboard():
