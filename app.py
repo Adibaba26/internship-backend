@@ -6,10 +6,11 @@ import requests
 app = Flask(__name__)
 
 RECAPTCHA_SECRET_KEY = "6Ld3QXorAAAAAFO4-OdtMwMXbhjMP1GNQp1uPKCU"
+DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
 
 # Initialize the database
 def init_db():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +43,7 @@ def login():
         return "reCAPTCHA verification failed. Please try again."
 
     # Save credentials to SQLite
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
     conn.commit()
