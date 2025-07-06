@@ -6,19 +6,20 @@ import requests
 app = Flask(__name__)
 
 RECAPTCHA_SECRET_KEY = "6Ld3QXorAAAAAFO4-OdtMwMXbhjMP1GNQp1uPKCU"
-DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
 
-# Initialize the database
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT NOT NULL,
-                    password TEXT NOT NULL
-                )''')
-    conn.commit()
-    conn.close()
+    if not os.path.exists("database.db"):
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+        c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL,
+            password TEXT NOT NULL
+        )
+        ''')
+        conn.commit()
+        conn.close()
 
 @app.route('/')
 def index():
@@ -28,9 +29,8 @@ def index():
 def login():
     email = request.form['email']
     password = request.form['password']
-    recaptcha_response = request.form['g-recaptcha-response']
+    recaptcha_response = request.form.get('g-recaptcha-response')
 
-    # Verify reCAPTCHA
     verify_url = "https://www.google.com/recaptcha/api/siteverify"
     payload = {
         'secret': RECAPTCHA_SECRET_KEY,
@@ -42,8 +42,7 @@ def login():
     if not result.get("success"):
         return "reCAPTCHA verification failed. Please try again."
 
-    # Save credentials to SQLite
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
     c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
     conn.commit()

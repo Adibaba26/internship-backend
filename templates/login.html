@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Internship Login</title>
+    <title>Login</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
-    <h2>Internship Login</h2>
-    <form action="/login" method="POST">
+    <h1>Login</h1>
+    <form method="POST" action="/login">
         <label>Email:</label><br>
-        <input type="email" name="email" required><br><br>
-        
+        <input type="email" name="email" required><br>
         <label>Password:</label><br>
         <input type="password" name="password" required><br><br>
         
         <div class="g-recaptcha" data-sitekey="6Ld3QXorAAAAAESJVE_6h1dJbPOqx-BX6_ahiErV"></div><br>
-        
-        <button type="submit">Login</button>
+
+        <input type="submit" value="Login">
     </form>
 </body>
 </html>
